@@ -4,14 +4,11 @@ please check the [wiki](https://github.com/yaapu/EthosMappingWidget/wiki)
 
 Offline GPS Mapping Widget for the FRSky Ethos operating system.
 
-FRSky X20
 ![image](https://user-images.githubusercontent.com/30294218/202525552-b63e6d27-d684-4450-845f-e112e050d81c.png)
 
-FRSky X10
-![image](https://user-images.githubusercontent.com/30294218/202531930-aed1ba2c-21e7-41c1-9846-b6258a73e179.png)
-
-FRSky X18
 ![image](https://user-images.githubusercontent.com/30294218/202532148-95229ed1-6b22-4d75-a4fd-494e1206c3ee.png)
+
+![image](https://user-images.githubusercontent.com/30294218/202531930-aed1ba2c-21e7-41c1-9846-b6258a73e179.png)
 
 It supports Ardupilot, iNAV, Crossfire and whatever FC or firmware that can send GPS info to Ethos
 
