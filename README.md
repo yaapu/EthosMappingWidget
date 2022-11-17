@@ -1,5 +1,7 @@
 # Yaapu Mapping Widget for Ethos
 
+please check the [wiki](https://github.com/yaapu/EthosMappingWidget/wiki)
+
 Offline GPS Mapping Widget for the FRSky Ethos operating system.
 
 ![image](https://user-images.githubusercontent.com/30294218/202525552-b63e6d27-d684-4450-845f-e112e050d81c.png)
