@@ -12,7 +12,7 @@ Offline GPS Mapping Widget for the FRSky Ethos operating system.
 
 It supports iNAV, Crossfire and whatever FC or firmware that can send GPS info to Ethos.
 
-For Ardupilot please use the "Yaapu Telemetry Widget" which have built in maps support
+For Ardupilot please use the ["Yaapu Telemetry Widget"](https://github.com/yaapu/FrskyTelemetryScript) which have built in maps support
 
 
 ![image](https://user-images.githubusercontent.com/30294218/202524759-92a3a220-cf87-4ac2-99e4-bc7c66751ea9.png)
