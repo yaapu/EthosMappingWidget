@@ -22,6 +22,32 @@ local function getTime()
   return os.clock()*100 -- 1/100th
 end
 
+local function getBitmapsPath()
+  -- local path from script root
+  return "./../../bitmaps/"
+end
+
+local function getLogsPath()
+  -- local path from script root
+  return "./../../logs/"
+end
+
+local function getYaapuBitmapsPath()
+  -- local path from script root
+  return "./bitmaps/"
+end
+
+local function getYaapuAudioPath()
+  -- local path from script root
+  return "./audio/"
+end
+
+local function getYaapuLibPath()
+  -- local path from script root
+  return "./lib/"
+end
+
+
 
 local mapStatus = {
   -- telemetry
@@ -76,6 +102,8 @@ local mapStatus = {
     gpsFormat = 0, -- decimal
     -- layout
     layout = 1,
+    mapTilesStorage = 1,
+    mapTilesStoragePathPrefix = "SD:",
   },
 
   -- panels
@@ -278,8 +306,11 @@ local function bgtasks(widget)
 
   -- update gps telemetry data
   local gpsData = {}
-  gpsData.lat = system.getSource({name="GPS", options=OPTION_LATITUDE}):value()
-  gpsData.lon = system.getSource({name="GPS", options=OPTION_LONGITUDE}):value()
+
+  if widget.gpsSource ~= nil then
+    gpsData.lat = widget.gpsSource:value(OPTION_LATITUDE)
+    gpsData.lon = widget.gpsSource:value(OPTION_LONGITUDE)
+  end
   if gpsData.lat ~= nil and gpsData.lon ~= nil then
     mapStatus.telemetry.lat = gpsData.lat
     mapStatus.telemetry.lon = gpsData.lon
@@ -302,7 +333,7 @@ local function bgtasks(widget)
         mapStatus.avgSpeed.avgTravelDist = mapStatus.avgSpeed.avgTravelDist * 0.8 + travelDist*0.2
         mapStatus.avgSpeed.avgTravelTime = mapStatus.avgSpeed.avgTravelTime * 0.8 + 0.01 * travelTime * 0.2
         mapStatus.avgSpeed.value = mapStatus.avgSpeed.avgTravelDist/mapStatus.avgSpeed.avgTravelTime
-        mapStatus.avgSpeed.travelDist = mapStatus.avgSpeed.travelDist + mapStatus.avgSpeed.avgTravelDist
+        mapStatus.avgSpeed.travelDist = mapStatus.avgSpeed.travelDist + travelDist
         mapStatus.telemetry.groundSpeed = mapStatus.avgSpeed.value
       end
       mapStatus.avgSpeed.lastLat = mapStatus.telemetry.lat
@@ -551,10 +582,11 @@ local function applyConfig()
     mapStatus.conf.mapZoomMax = mapStatus.conf.googleZoomMax
   end
 
+  mapStatus.conf.mapTilesStoragePathPrefix = applyDefault(mapStatus.conf.mapTilesStorage, 1, {"SD:","RADIO:"})
 end
 local function configure(widget)
   local line = form.addLine("Widget version")
-  form.addStaticText(line, nil, "1.0.0 dev".." ("..'d1f1063'..")")
+  form.addStaticText(line, nil, "1.6.0 dev".." ("..'6db4aed'..")")
 
   line = form.addLine("Link quality source")
   form.addSourceField(line, nil, function() return mapStatus.conf.linkQualitySource end, function(value) mapStatus.conf.linkQualitySource = value end)
@@ -598,6 +630,9 @@ local function configure(widget)
       widget.gmapZoomMinField:enable(value==1)
     end
   )
+
+  line = form.addLine("Map image tiles storage device")
+  form.addChoiceField(line, form.getFieldSlots(line)[0], {{"External SD Card", 1}, {"Internal Radio Storage", 2}}, function() return mapStatus.conf.mapTilesStorage end, function(value) mapStatus.conf.mapTilesStorage = value end)
 
   line = form.addLine("Map type")
   form.addChoiceField(line, form.getFieldSlots(line)[0], {{"Satellite", 1}, {"Hybrid (Google only)", 2}, {"Map", 3}, {"Terrain", 4}}, function() return mapStatus.conf.mapTypeId end, function(value) mapStatus.conf.mapTypeId = value end)
@@ -701,6 +736,7 @@ local function read(widget)
   mapStatus.conf.userSensor1 = storageToConfig("userSensor1", nil)
   mapStatus.conf.userSensor2 = storageToConfig("userSensor2", nil)
   mapStatus.conf.userSensor3 = storageToConfig("userSensor3", nil)
+  mapStatus.conf.mapTilesStorage = storageToConfig("mapTilesStorage", nil)
 
   applyConfig()
 end
@@ -726,6 +762,7 @@ local function write(widget)
   storage.write("userSensor1", mapStatus.conf.userSensor1)
   storage.write("userSensor2", mapStatus.conf.userSensor2)
   storage.write("userSensor3", mapStatus.conf.userSensor3)
+  storage.write("mapTilesStorage", mapStatus.conf.mapTilesStorage)
 
   applyConfig()
   -- reset the layout

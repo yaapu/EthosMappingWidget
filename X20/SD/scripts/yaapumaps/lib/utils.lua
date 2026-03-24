@@ -3,8 +3,9 @@ local utils = {}
 local status = nil
 local libs = nil
 
-local alwaysOn = system.getSource({category=CATEGORY_ALWAYS_ON, member=1, options=0})
-local alwaysOff = system.getSource({category=0, member=1, options=0})
+local alwaysOn = system.getSource({category=CATEGORY_ALWAYS_ON})
+local alwaysOff = system.getSource({category=CATEGORY_NONE})
+
 local sources = {}
 
 function utils.getSourceValue(name)
@@ -147,6 +148,9 @@ end
 function utils.resetTimer()
   --print("TIMER RESET")
   local timer = model.getTimer("Yaapu")
+  if timer == nil then
+    return
+  end
   timer:activeCondition( alwaysOff )
   timer:resetCondition( alwaysOn )
 end
@@ -155,6 +159,9 @@ function utils.startTimer()
   --print("TIMER START")
   status.lastTimerStart = getTime()/100
   local timer = model.getTimer("Yaapu")
+  if timer == nil then
+    return
+  end
   timer:activeCondition( alwaysOn )
   timer:resetCondition( alwaysOff )
 end
@@ -163,6 +170,9 @@ function utils.stopTimer()
   --print("TIMER STOP")
   status.lastTimerStart = 0
   local timer = model.getTimer("Yaapu")
+  if timer == nil then
+    return
+  end
   timer:activeCondition( alwaysOff )
   timer:resetCondition( alwaysOff )
 end

@@ -22,6 +22,32 @@ local function getTime()
   return os.clock()*100 -- 1/100th
 end
 
+local function getBitmapsPath()
+  -- local path from script root
+  return "./../../bitmaps/"
+end
+
+local function getLogsPath()
+  -- local path from script root
+  return "./../../logs/"
+end
+
+local function getYaapuBitmapsPath()
+  -- local path from script root
+  return "./bitmaps/"
+end
+
+local function getYaapuAudioPath()
+  -- local path from script root
+  return "./audio/"
+end
+
+local function getYaapuLibPath()
+  -- local path from script root
+  return "./lib/"
+end
+
+
 local mapLib = {}
 
 local status = nil
@@ -43,7 +69,9 @@ local myScreenX, myScreenY
 local homeScreenX, homeScreenY
 local estimatedHomeScreenX, estimatedHomeScreenY
 local tile_x,tile_y,offset_x,offset_y
+local home_tile_x,home_tile_y,home_offset_x,home_offset_y
 local tiles = {}
+local tilesXYByPath = {}
 local tiles_path_to_idx = {} -- path to idx cache
 local mapBitmapByPath = {}
 local nomap = nil
@@ -94,6 +122,11 @@ local zoomUpdateTimer = getTime()
 local zoomUpdate = false
 
 local n1,n2
+
+local function getMapBitmapsPath()
+  -- local path from script root
+  return status.conf.mapTilesStoragePathPrefix.."/bitmaps/"
+end
 
 function mapLib.clip(n, min, max)
   return math.min(math.max(n, min), max)
@@ -152,7 +185,7 @@ function mapLib.gmapcatcher_tiles_to_path(tile_x, tile_y, level)
 end
 
 function mapLib.getTileBitmap(tilePath)
-  local fullPath = "/bitmaps/yaapu/maps/"..status.conf.mapType..tilePath
+  local fullPath = getMapBitmapsPath().."yaapu/maps/"..status.conf.mapType..tilePath
   -- check cache
   if mapBitmapByPath[tilePath] ~= nil then
     return mapBitmapByPath[tilePath]
@@ -167,7 +200,7 @@ function mapLib.getTileBitmap(tilePath)
   else
     print("ERROR",fullPath)
     if nomap == nil then
-      nomap = lcd.loadBitmap("/bitmaps/yaapu/maps/nomap.png")
+      nomap = lcd.loadBitmap(getMapBitmapsPath().."yaapu/maps/nomap.png")
     end
     mapBitmapByPath[tilePath] = nomap
     return nomap
@@ -192,6 +225,7 @@ function mapLib.loadAndCenterTiles(tile_x,tile_y,offset_x,offset_y,width,level)
           tiles_path_to_idx[tile_path] =  { idx, x, y }
         end
       end
+      tilesXYByPath[tile_path] = {x,y}
     end
   end
   -- release unused cached images
@@ -206,6 +240,7 @@ function mapLib.loadAndCenterTiles(tile_x,tile_y,offset_x,offset_y,width,level)
     if remove then
       mapBitmapByPath[path]=nil
       tiles_path_to_idx[path]=nil
+      tilesXYByPath[path] = nil
     end
   end
   -- force a call to destroyBitmap()
@@ -251,7 +286,7 @@ function mapLib.drawTiles(width,xmin,xmax,ymin,ymax,color,level)
   lcd.color(WHITE)
   lcd.font(FONT_STD)
   lcd.drawLine(x+5,y-15,x+5+scaleLen,y-15)
-  lcd.drawText(x+5,y-40,scaleLabel)
+  lcd.drawText(x+5,y-40,string.format("%s (%d)", scaleLabel, status.mapZoomLevel))
 end
 
 function mapLib.getScreenCoordinates(minX,minY,tile_x,tile_y,offset_x,offset_y,level)
@@ -311,19 +346,13 @@ function mapLib.drawMap(widget, x, y, w, h, level, tiles_x, tiles_y, heading)
         homeNeedsRefresh = false
         if status.telemetry.homeLat ~= nil then
           -- current vehicle tile coordinates
-          tile_x,tile_y,offset_x,offset_y = mapLib.coord_to_tiles(status.telemetry.homeLat, status.telemetry.homeLon, level)
+          home_tile_x,home_tile_y,home_offset_x,home_offset_y = mapLib.coord_to_tiles(status.telemetry.homeLat, status.telemetry.homeLon, level)
           -- viewport relative coordinates
-          homeScreenX,homeScreenY = mapLib.getScreenCoordinates(minX,minY,tile_x,tile_y,offset_x,offset_y,level)
+          homeScreenX,homeScreenY = mapLib.getScreenCoordinates(minX,minY,home_tile_x,home_tile_y,home_offset_x,home_offset_y,level)
         end
       else
         -- update estimated home, schedule home update
         homeNeedsRefresh = true
-        estimatedHomeGps.lat,estimatedHomeGps.lon = libs.utils.getLatLonFromAngleAndDistance(status.telemetry.homeAngle, status.telemetry.homeDist)
-        if estimatedHomeGps.lat ~= nil then
-          local t_x,t_y,o_x,o_y = mapLib.coord_to_tiles(estimatedHomeGps.lat,estimatedHomeGps.lon,level)
-          -- viewport relative coordinates
-          estimatedHomeScreenX,estimatedHomeScreenY = mapLib.getScreenCoordinates(minX,minY,t_x,t_y,o_x,o_y,level)
-        end
       end
       collectgarbage()
       collectgarbage()
@@ -353,17 +382,6 @@ function mapLib.drawMap(widget, x, y, w, h, level, tiles_x, tiles_y, heading)
       end
     end
 
-    --[[
-    -- draw estimated home (debug info)
-    if estimatedHomeGps.lat ~= nil and estimatedHomeGps.lon ~= nil and estimatedHomeScreenX ~= nil then
-      local homeCode = drawLib.computeOutCode(estimatedHomeScreenX, estimatedHomeScreenY, minX+11, minY+10, maxX-11, maxY-10);
-      if homeCode == 0 then
-        lcd.setColor(CUSTOM_COLOR,COLOR_RED)
-        lcd.drawRectangle(estimatedHomeScreenX-11,estimatedHomeScreenY-11,20,20,CUSTOM_COLOR)
-      end
-    end
-    --]]
-
     -- draw vehicle
     if myScreenX ~= nil then
       if heading ~= nil then
@@ -377,13 +395,6 @@ function mapLib.drawMap(widget, x, y, w, h, level, tiles_x, tiles_y, heading)
       end
       -- wp support
       if status.wpEnabledMode == 1 and status.wpEnabled == 1 and status.telemetry.wpNumber > 0 then
-        -- wp number and distance
-        --[[
-        lcd.color(WHITE)
-        lcd.drawText(MAP_X+MAP_W-2, MAP_Y+2, string.format("#%d",status.telemetry.wpNumber),SMLSIZE+CUSTOM_COLOR+RIGHT)
-        lcd.drawText(MAP_X+MAP_W-2, MAP_Y+20, string.format("%d%s",status.telemetry.wpDistance * UNIT_DIST_SCALE,UNIT_DIST_LABEL),SMLSIZE+CUSTOM_COLOR+RIGHT)
-        lcd.drawText(MAP_X+MAP_W-2, MAP_Y+40, string.format("%d",status.telemetry.wpBearing),SMLSIZE+CUSTOM_COLOR+RIGHT)
-        --]]
         -- draw current waypoint info in white
         -- calc new position on odd cycles
         if status.wpLat ~= nil and status.wpLon ~= nil then
@@ -411,12 +422,11 @@ function mapLib.drawMap(widget, x, y, w, h, level, tiles_x, tiles_y, heading)
     for p=0, math.min(sampleCount-1,status.conf.mapTrailDots-1)
     do
       if p ~= (sampleCount-1)%status.conf.mapTrailDots then
-        local tcache = tiles_path_to_idx[posHistory[p][1]]
-        if tcache ~= nil then
-          if tiles[tcache[1]] ~= nil then
-            -- ok it's on screen
-            lcd.drawFilledRectangle(minX + (tcache[2]-1)*TILES_SIZE + posHistory[p][2], minY + (tcache[3]-1)*TILES_SIZE + posHistory[p][3],3,3)
-          end
+        -- check if on screen
+        if tilesXYByPath[posHistory[p][1]] ~= nil then
+          local x = tilesXYByPath[posHistory[p][1]][1]
+          local y = tilesXYByPath[posHistory[p][1]][2]
+          lcd.drawFilledRectangle(minX + (x-1)*TILES_SIZE + posHistory[p][2]-1, minY + (y-1)*TILES_SIZE + posHistory[p][3]-1,3,3)
         end
       end
     end

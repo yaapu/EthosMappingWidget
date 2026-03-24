@@ -22,6 +22,32 @@ local function getTime()
   return os.clock()*100 -- 1/100th
 end
 
+local function getBitmapsPath()
+  -- local path from script root
+  return "./../../bitmaps/"
+end
+
+local function getLogsPath()
+  -- local path from script root
+  return "./../../logs/"
+end
+
+local function getYaapuBitmapsPath()
+  -- local path from script root
+  return "./bitmaps/"
+end
+
+local function getYaapuAudioPath()
+  -- local path from script root
+  return "./audio/"
+end
+
+local function getYaapuLibPath()
+  -- local path from script root
+  return "./lib/"
+end
+
+
 local status = nil
 local libs = nil
 
@@ -118,7 +144,7 @@ function drawLib.drawNoTelemetryData(widget)
     lcd.font(FONT_XXL)
     lcd.drawText(392, 115, "NO TELEMETRY", CENTERED)
     lcd.font(FONT_STD)
-    lcd.drawText(392, 180, "Yaapu Mapping Widget 1.0.0 dev".."("..'d1f1063'..")", CENTERED)
+    lcd.drawText(392, 180, "Yaapu Mapping Widget 1.6.0 dev".."("..'6db4aed'..")", CENTERED)
   end
 end
 
@@ -130,7 +156,7 @@ function drawLib.drawNoGPSData(widget)
   lcd.font(FONT_XXL)
   lcd.drawText(392, 115, "...waiting for GPS", CENTERED)
   lcd.font(FONT_STD)
-  lcd.drawText(392, 180, "Yaapu Mapping Widget 1.0.0 dev".."("..'d1f1063'..")", CENTERED)
+  lcd.drawText(392, 180, "Yaapu Mapping Widget 1.6.0 dev".."("..'6db4aed'..")", CENTERED)
 end
 
 function drawLib.drawFenceStatus(x,y)
